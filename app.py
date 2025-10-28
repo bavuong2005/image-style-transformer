@@ -143,6 +143,7 @@ TRANSLATED_UI = {
         "processed_caption": "Ảnh đã xử lý:",
         "download_button": "Tải ảnh đã xử lý",
         "info_start": "Vui lòng tải ảnh lên ở cột bên trái để bắt đầu.",
+        "resize_info": "Ảnh gốc quá lớn. Đã tự động giảm kích thước (chiều rộng tối đa {max_width}px) để xử lý nhanh hơn.",
     },
     "en": {
         "lang_selector": "Select Language:",
@@ -157,6 +158,7 @@ TRANSLATED_UI = {
         "processed_caption": "Processed Image:",
         "download_button": "Download Processed Image",
         "info_start": "Please upload an image on the left to start.",
+        "resize_info": "Original image is too large. It has been automatically resized (max width {max_width}px) for faster processing.",
     },
     "ja": {
         "lang_selector": "言語を選択:",
@@ -171,6 +173,7 @@ TRANSLATED_UI = {
         "processed_caption": "処理後の画像：",
         "download_button": "処理済み画像をダウンロード",
         "info_start": "開始するには、左側で画像をアップロードしてください。",
+        "resize_info": "元の画像が大きすぎるため、処理を高速化するために自動的にリサイズされました（最大幅 {max_width}px）。",
     }
 }
 
@@ -205,7 +208,21 @@ with col1:
     original_image = None
     if uploaded_file is not None:
         original_image = Image.open(uploaded_file).convert('RGB')
-        st.image(original_image, caption=ui["original_caption"], use_container_width=True)
+        
+        # Resize large images to improve performance
+        MAX_WIDTH = 1200
+        if original_image.width > MAX_WIDTH:
+            try:
+                aspect_ratio = original_image.height / original_image.width
+                new_height = int(MAX_WIDTH * aspect_ratio)
+                
+                # Use RESAMPLING.LANCZOS for high-quality downsampling
+                original_image = original_image.resize((MAX_WIDTH, new_height), Image.Resampling.LANCZOS)
+                st.info(ui["resize_info"].format(max_width=MAX_WIDTH))
+            except Exception as e:
+                st.error(f"Lỗi khi giảm kích thước ảnh: {e}")
+        
+        st.image(original_image, caption=ui["original_caption"], width='stretch')
 
 with col2:
     st.header(ui["result_header"])
@@ -236,7 +253,7 @@ with col2:
                 st.image(
                     processed_image, 
                     caption=f"{ui['processed_caption']} {selected_style_name}", 
-                    use_container_width=True
+                    width='stretch'
                 )
                 
                 # Prepare file for download
