@@ -183,7 +183,7 @@ st.set_page_config(layout="wide")
 
 # 1. LANGUAGE SELECTOR
 lang_code = st.radio(
-    label="Select Language / 言語を選択 / Chọn ngôn ngữ:",
+    label="Chọn ngôn ngữ / Select Language / 言語を選択:",
     options=["vi", "en", "ja"],
     format_func=lambda code: {"vi": "Tiếng Việt", "en": "English", "ja": "日本語"}[code],
     horizontal=True,
