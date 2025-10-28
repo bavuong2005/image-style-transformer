@@ -28,7 +28,7 @@ The application includes a wide range of popular filters:
 8. **Moody / Dark tone:** A deep, atmospheric, and shadowy look.  
 9. **Warm tone:** Adds warm yellow and orange hues.  
 10. **Cool tone:** Adds cool blue and teal hues.  
-11. **Ume Style (Custom):** A unique, custom-defined style featuring very high contrast and saturation for a powerful color punch.
+11. **⭐ Ume Style (Custom):** A unique, custom-defined style featuring very high contrast and saturation for a powerful color punch.
 
 ## **Project Structure**
 
