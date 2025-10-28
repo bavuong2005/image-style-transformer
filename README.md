@@ -2,6 +2,10 @@
 
 A simple web application built with Streamlit that allows users to upload an image and quickly apply various stylistic filters. The app is fully internationalized with support for English, Vietnamese, and Japanese for both the UI and filter descriptions.
 
+## **Demo**
+
+![Demo](https://raw.githubusercontent.com/bavuong2005/image-style-transformer/refs/heads/main/demo.gif)
+
 ## **Features**
 
 * Simple drag-and-drop file uploader.  
