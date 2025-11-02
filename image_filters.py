@@ -1,121 +1,116 @@
 from PIL import Image, ImageEnhance, ImageOps
 import numpy as np
 
-# Image Processing Functions (Image Filter Functions)
+# Helper functions
+def adjust_rgb_channels(img, r_factor=1.0, g_factor=1.0, b_factor=1.0):
+    r, g, b = img.split()
+    r = r.point(lambda i: min(i * r_factor, 255))
+    g = g.point(lambda i: min(i * g_factor, 255))
+    b = b.point(lambda i: min(i * b_factor, 255))
+    return Image.merge("RGB", (r, g, b))
 
+def add_noise(img, intensity=15):
+    arr = np.array(img).astype(np.int16)
+    noise = np.random.randint(-intensity, intensity + 1, arr.shape, dtype=np.int16)
+    noisy = np.clip(arr + noise, 0, 255).astype(np.uint8)
+    return Image.fromarray(noisy)
+
+def gamma_correct(img, gamma=1.0):
+    arr = np.array(img).astype(np.float32) / 255.0
+    arr = np.power(arr, gamma)
+    return Image.fromarray(np.clip(arr * 255, 0, 255).astype("uint8"))
+
+def shift_hue(img, shift=2):
+    h, s, v = img.convert('HSV').split()
+    h = h.point(lambda i: (i + shift) % 255)
+    return Image.merge('HSV', (h, s, v)).convert('RGB')
+
+# Main filter functions
 def apply_vintage(img):
-    img_color = ImageEnhance.Color(img).enhance(0.6)
-    img_contrast = ImageEnhance.Contrast(img_color).enhance(0.8)
-    img_brightness = ImageEnhance.Brightness(img_contrast).enhance(1.1)
-    r, g, b = img_brightness.split()
-    r = r.point(lambda i: i * 1.05)
-    g = g.point(lambda i: i * 1.02)
-    b = b.point(lambda i: i * 0.9)
-    return Image.merge('RGB', (r, g, b))
+    """Hiệu ứng cổ điển, màu hơi ngả vàng và tương phản thấp."""
+    img = ImageEnhance.Color(img).enhance(0.6)
+    img = ImageEnhance.Contrast(img).enhance(0.8)
+    img = ImageEnhance.Brightness(img).enhance(1.1)
+    img = adjust_rgb_channels(img, 1.05, 1.02, 0.9)
+    return img
 
 def apply_film_analog(img):
-    img_contrast = ImageEnhance.Contrast(img).enhance(1.15)
-    img_array = np.array(img_contrast)
-    noise = np.random.randint(-18, 18, img_array.shape, dtype='int16')
-    img_noisy = np.clip(img_array.astype('int16') + noise, 0, 255).astype('uint8')
-    return Image.fromarray(img_noisy)
+    """Hiệu ứng film analog: tương phản mạnh và thêm hạt nhiễu."""
+    img = ImageEnhance.Contrast(img).enhance(1.15)
+    return add_noise(img, intensity=18)
 
-def apply_cinematic_teal_orange(img):
-    r, g, b = img.split()
-    r = r.point(lambda i: i * 1.1 if i > 120 else i * 0.9)
-    g = g.point(lambda i: i * 0.95)
-    b = b.point(lambda i: i * 1.1 if i < 150 else i * 0.9)
-    return Image.merge('RGB', (r, g, b))
+def apply_teal_orange_cinematic(img):
+    """Hiệu ứng teal-orange phong cách điện ảnh: da cam - xanh lam."""
+    img = adjust_rgb_channels(img, r_factor=1.08, g_factor=0.95, b_factor=1.1)
+    return ImageEnhance.Contrast(img).enhance(1.1)
 
-def apply_bw(img):
-    return img.convert('L')
+def apply_black_white(img):
+    """Chuyển ảnh sang trắng đen cổ điển."""
+    return img.convert("L")
 
 def apply_sepia(img):
-    img_l = img.convert('L')
-    return ImageOps.colorize(img_l, black="#4E3629", white="#FDF8E8")
+    """Tạo tone nâu ấm kiểu ảnh cũ."""
+    gray = img.convert("L")
+    return ImageOps.colorize(gray, black="#4B382A", white="#F5ECD0")
 
 def apply_pastel(img):
-    img_contrast = ImageEnhance.Contrast(img).enhance(0.7)
-    img_bright = ImageEnhance.Brightness(img_contrast).enhance(1.1)
-    return img_bright
+    """Tone sáng, màu nhạt nhẹ kiểu pastel."""
+    img = ImageEnhance.Contrast(img).enhance(0.7)
+    img = ImageEnhance.Brightness(img).enhance(1.15)
+    img = ImageEnhance.Color(img).enhance(1.1)
+    return img
 
-def apply_hdr_contrast(img):
-    img_contrast = ImageEnhance.Contrast(img).enhance(1.7)
-    img_sharp = ImageEnhance.Sharpness(img_contrast).enhance(1.2)
-    return img_sharp
+def apply_hdr_boost(img):
+    """Tăng tương phản và độ sắc nét kiểu HDR."""
+    img = ImageEnhance.Contrast(img).enhance(1.7)
+    img = ImageEnhance.Sharpness(img).enhance(1.2)
+    return img
 
 def apply_moody_dark(img):
-    img_bright = ImageEnhance.Brightness(img).enhance(0.85)
-    img_contrast = ImageEnhance.Contrast(img_bright).enhance(1.25)
-    return img_contrast
+    """Tone tối, cảm xúc, tương phản cao."""
+    img = ImageEnhance.Brightness(img).enhance(0.85)
+    img = ImageEnhance.Contrast(img).enhance(1.25)
+    img = adjust_rgb_channels(img, 1.02, 1.0, 0.95)
+    return img
 
 def apply_warm_tone(img):
-    r, g, b = img.split()
-    r = r.point(lambda i: min(i * 1.15, 255))
-    b = b.point(lambda i: i * 0.9)
-    return Image.merge('RGB', (r, g, b))
+    """Tăng tone ấm (đỏ, vàng), giảm xanh lam."""
+    return adjust_rgb_channels(img, r_factor=1.15, g_factor=1.05, b_factor=0.9)
 
 def apply_cool_tone(img):
-    r, g, b = img.split()
-    r = r.point(lambda i: i * 0.9)
-    b = b.point(lambda i: min(i * 1.15, 255))
-    return Image.merge('RGB', (r, g, b))
+    """Tăng tone lạnh (xanh lam), giảm đỏ."""
+    return adjust_rgb_channels(img, r_factor=0.9, g_factor=1.0, b_factor=1.15)
 
+# Ume style functions
 def apply_ume_style_soft(img):
-    from PIL import ImageEnhance, Image
-    import numpy as np
-
-    img_enh = ImageEnhance.Brightness(img).enhance(1.03)
-    img_enh = ImageEnhance.Contrast(img_enh).enhance(1.3)
-    img_enh = ImageEnhance.Color(img_enh).enhance(1.3)
-    img_enh = ImageEnhance.Sharpness(img_enh).enhance(1.1)
-
-    # Hue shift nhẹ
-    h, s, v = img_enh.convert('HSV').split()
-    h_new = h.point(lambda i: (i + 2) % 255)
-    img_hue = Image.merge('HSV', (h_new, s, v)).convert('RGB')
-
-    # Nâng sáng bóng nhẹ bằng gamma
-    data = np.array(img_hue, dtype=np.float32) / 255.0
-    data = np.power(data, 0.95)
-    return Image.fromarray(np.clip(data * 255, 0, 255).astype('uint8'))
+    """Ume style nhẹ nhàng, sáng, tự nhiên."""
+    img = ImageEnhance.Brightness(img).enhance(1.03)
+    img = ImageEnhance.Contrast(img).enhance(1.3)
+    img = ImageEnhance.Color(img).enhance(1.3)
+    img = ImageEnhance.Sharpness(img).enhance(1.1)
+    img = shift_hue(img, 2)
+    return gamma_correct(img, 0.95)
 
 def apply_ume_style_natural(img):
-    from PIL import ImageEnhance, Image
-    import numpy as np
-
-    img_enh = ImageEnhance.Brightness(img).enhance(1.05)
-    img_enh = ImageEnhance.Contrast(img_enh).enhance(1.5)
-    img_enh = ImageEnhance.Color(img_enh).enhance(1.6)
-    img_enh = ImageEnhance.Sharpness(img_enh).enhance(1.2)
-
-    h, s, v = img_enh.convert('HSV').split()
-    h_new = h.point(lambda i: (i + 3) % 255)
-    img_hue = Image.merge('HSV', (h_new, s, v)).convert('RGB')
-
-    data = np.array(img_hue, dtype=np.float32) / 255.0
-    data = np.power(data, 0.9)  # nâng sáng vùng tối nhẹ
-    return Image.fromarray(np.clip(data * 255, 0, 255).astype('uint8'))
+    """Ume style trung tính, hơi ấm, tươi màu."""
+    img = ImageEnhance.Brightness(img).enhance(1.05)
+    img = ImageEnhance.Contrast(img).enhance(1.5)
+    img = ImageEnhance.Color(img).enhance(1.6)
+    img = ImageEnhance.Sharpness(img).enhance(1.2)
+    img = shift_hue(img, 3)
+    return gamma_correct(img, 0.9)
 
 def apply_ume_style_strong(img):
-    from PIL import ImageEnhance, Image
-    import numpy as np
-
-    img_enh = ImageEnhance.Brightness(img).enhance(1.08)
-    img_enh = ImageEnhance.Contrast(img_enh).enhance(1.8)
-    img_enh = ImageEnhance.Color(img_enh).enhance(1.8)
-    img_enh = ImageEnhance.Sharpness(img_enh).enhance(1.3)
-
-    h, s, v = img_enh.convert('HSV').split()
-    h_new = h.point(lambda i: (i + 4) % 255)
-    img_hue = Image.merge('HSV', (h_new, s, v)).convert('RGB')
-
-    data = np.array(img_hue, dtype=np.float32) / 255.0
-    data = np.power(data, 0.85)
-    return Image.fromarray(np.clip(data * 255, 0, 255).astype('uint8'))
+    """Ume style mạnh mẽ, đậm màu, tương phản cao."""
+    img = ImageEnhance.Brightness(img).enhance(1.08)
+    img = ImageEnhance.Contrast(img).enhance(1.8)
+    img = ImageEnhance.Color(img).enhance(1.8)
+    img = ImageEnhance.Sharpness(img).enhance(1.3)
+    img = shift_hue(img, 4)
+    return gamma_correct(img, 0.85)
 
 
-# Map (Dictionary) linking style names to processing functions
+# Map of style names to functions
 
 STYLE_FUNCTIONS = {
     "ume_soft": apply_ume_style_soft,
@@ -123,11 +118,11 @@ STYLE_FUNCTIONS = {
     "ume_strong": apply_ume_style_strong,
     "vintage": apply_vintage,
     "film": apply_film_analog,
-    "cinematic": apply_cinematic_teal_orange,
-    "bw": apply_bw,
+    "cinematic": apply_teal_orange_cinematic,
+    "bw": apply_black_white,
     "sepia": apply_sepia,
     "pastel": apply_pastel,
-    "hdr": apply_hdr_contrast,
+    "hdr": apply_hdr_boost,
     "moody": apply_moody_dark,
     "warm": apply_warm_tone,
     "cool": apply_cool_tone,
